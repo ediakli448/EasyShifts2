@@ -1,0 +1,5 @@
+{
+  "name": "EasyShifts",
+  "description": "A secure, multi-tenant shift management system for veterinary clinics with auto-scheduling and role-based access.",
+  "requestFramePermissions": []
+}
