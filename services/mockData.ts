@@ -1,4 +1,4 @@
-import { Role, StaffRole, ScheduleStatus, ShiftLabel, User, Schedule, Constraint, ConstraintType, SwapStatus, SwapRequest } from '../types';
+import { Role, StaffRole, ScheduleStatus, ShiftLabel, User, Schedule, Constraint, ConstraintType, SwapStatus, SwapRequest, OrgSettings, DayOfWeek } from '../types';
 import { addDays, format, startOfWeek } from 'date-fns';
 
 // Helpers
@@ -89,3 +89,39 @@ export const MOCK_SWAPS: SwapRequest[] = [
     ]
   }
 ];
+
+// Settings
+const defaultShiftTimes = {
+  [ShiftLabel.MORNING]: { start: '09:00', end: '15:00' },
+  [ShiftLabel.EVENING]: { start: '15:00', end: '21:00' },
+};
+
+const defaultDay = { 
+  isOpen: true, 
+  shifts: defaultShiftTimes 
+};
+
+export const MOCK_SETTINGS: OrgSettings = {
+  weeklyHours: {
+    'Sun': JSON.parse(JSON.stringify(defaultDay)),
+    'Mon': JSON.parse(JSON.stringify(defaultDay)),
+    'Tue': JSON.parse(JSON.stringify(defaultDay)),
+    'Wed': JSON.parse(JSON.stringify(defaultDay)),
+    'Thu': JSON.parse(JSON.stringify(defaultDay)),
+    'Fri': { 
+      isOpen: true, 
+      shifts: {
+        [ShiftLabel.MORNING]: { start: '09:00', end: '14:00' },
+        [ShiftLabel.EVENING]: { start: '14:00', end: '18:00' }, // Hypothetical short evening
+      }
+    },
+    'Sat': { 
+      isOpen: false, 
+      shifts: defaultShiftTimes
+    },
+  },
+  defaultRequirements: {
+    [ShiftLabel.MORNING]: { [StaffRole.VET]: 1, [StaffRole.ASSISTANT]: 2 },
+    [ShiftLabel.EVENING]: { [StaffRole.VET]: 1, [StaffRole.ASSISTANT]: 2 },
+  }
+};

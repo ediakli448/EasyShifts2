@@ -10,7 +10,8 @@ import {
   LogOut, 
   Menu,
   RefreshCw,
-  Activity
+  Activity,
+  Settings
 } from 'lucide-react';
 
 export const Layout: React.FC = () => {
@@ -29,6 +30,7 @@ export const Layout: React.FC = () => {
         { to: '/admin/schedule', label: 'Schedule Builder', icon: CalendarDays },
         { to: '/admin/swaps', label: 'Swap Requests', icon: RefreshCw },
         { to: '/admin/users', label: 'Staff', icon: Users },
+        { to: '/admin/settings', label: 'Settings', icon: Settings },
         { to: '/admin/diagnostics', label: 'Diagnostics (A/B)', icon: Activity },
       ]
     : [

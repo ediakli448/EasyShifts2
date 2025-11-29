@@ -9,6 +9,7 @@ import { ScheduleBuilder } from './pages/ScheduleBuilder';
 import { Constraints } from './pages/Constraints';
 import { Swaps } from './pages/Swaps';
 import { Diagnostics } from './pages/Diagnostics';
+import { Settings } from './pages/Settings';
 import { Role } from './types';
 
 const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode, allowedRoles?: Role[] }) => {
@@ -43,6 +44,16 @@ const AppRoutes = () => {
         <Route path="/admin/swaps" element={
             <ProtectedRoute allowedRoles={[Role.ADMIN]}>
               <Swaps />
+            </ProtectedRoute>
+        } />
+        <Route path="/admin/users" element={
+            <ProtectedRoute allowedRoles={[Role.ADMIN]}>
+              <div className="p-8 text-center text-slate-500">Staff Management (Coming Soon)</div>
+            </ProtectedRoute>
+        } />
+        <Route path="/admin/settings" element={
+            <ProtectedRoute allowedRoles={[Role.ADMIN]}>
+              <Settings />
             </ProtectedRoute>
         } />
         <Route path="/admin/diagnostics" element={

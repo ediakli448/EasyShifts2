@@ -82,9 +82,9 @@ export const ScheduleBuilder: React.FC = () => {
     // First attempt (normal)
     let res = await api.assignShift(selectedShift.id, userId, role, false);
 
-    // If capacity error, ask for force override
-    if (!res.success && res.error && res.error.includes("Shift is full")) {
-        const confirmForce = window.confirm(`${res.error}.\n\nDo you want to force assign this worker anyway?`);
+    // If capacity error OR constraint error, ask for force override
+    if (!res.success && res.error && (res.error.includes("Shift is full") || res.error.includes("constraint"))) {
+        const confirmForce = window.confirm(`${res.error}.\n\nDo you want to force assign this worker anyway? (Manual Override)`);
         if (confirmForce) {
             res = await api.assignShift(selectedShift.id, userId, role, true);
         }

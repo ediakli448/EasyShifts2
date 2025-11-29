@@ -2,7 +2,8 @@ import {
   MOCK_SCHEDULE, 
   MOCK_USERS, 
   MOCK_CONSTRAINTS, 
-  MOCK_SWAPS 
+  MOCK_SWAPS,
+  MOCK_SETTINGS
 } from './mockData';
 import { 
   Schedule, 
@@ -18,7 +19,8 @@ import {
   ApiResponse,
   Role,
   ShiftLabel,
-  ExperimentGroup
+  ExperimentGroup,
+  OrgSettings
 } from '../types';
 import { config } from './config';
 import { monitor } from './monitoring';
@@ -30,6 +32,7 @@ class ApiService {
   private schedule: Schedule = { ...MOCK_SCHEDULE };
   private constraints: Constraint[] = [...MOCK_CONSTRAINTS];
   private swaps: SwapRequest[] = [...MOCK_SWAPS];
+  private settings: OrgSettings = { ...MOCK_SETTINGS };
   
   // Security: Current User Context
   private currentUser: User | null = null;
@@ -226,27 +229,35 @@ class ApiService {
       const user = MOCK_USERS.find(u => u.id === userId);
       if (!user) throw new Error("User not found");
 
+      // --- VALIDATION CHECKS (Return failure directly, don't throw) ---
+      
+      // Check 1: Role Mismatch
       if (user.staffRole !== role) {
-          throw new Error(`Role mismatch: User is ${user.staffRole} but being assigned as ${role}`);
+          monitor.trackPerformance('assignShift', Date.now() - start, true, this.currentUser);
+          return { success: false, error: `Role mismatch: User is ${user.staffRole} but being assigned as ${role}` };
       }
 
+      // Check 2: Already Assigned
       if (shift.assignments.some(a => a.userId === userId)) {
-          throw new Error("User already assigned to this shift");
+          monitor.trackPerformance('assignShift', Date.now() - start, true, this.currentUser);
+          return { success: false, error: "User already assigned to this shift" };
       }
 
       const currentCount = shift.assignments.filter(a => a.role === role).length;
       
-      // If force is true, we bypass the capacity check
+      // Check 3: Capacity (with Force override)
       if (!force && currentCount >= shift.requirements[role]) {
-          throw new Error(`Shift is full for ${role} role`);
+          monitor.trackPerformance('assignShift', Date.now() - start, true, this.currentUser);
+          return { success: false, error: `Shift is full for ${role} role` };
       }
 
-      if (this.isUserUnavail(userId, shift)) {
-          // Note: Force currently allows bypassing capacity, but not unavailability constraints.
-          // To allow bypassing availability too, we would add !force check here as well.
-          throw new Error("User has a constraint preventing this assignment");
+      // Check 4: Constraints (with Force override)
+      if (!force && this.isUserUnavail(userId, shift)) {
+          monitor.trackPerformance('assignShift', Date.now() - start, true, this.currentUser);
+          return { success: false, error: "User has a constraint preventing this assignment" };
       }
 
+      // --- EXECUTE ASSIGNMENT ---
       const newAssignment: Assignment = {
         id: this.generateId(),
         shiftId,
@@ -260,6 +271,7 @@ class ApiService {
       return { success: true };
 
     } catch (e: any) {
+      // Only catch unexpected errors (Network simulation, Rate limits, or Auth failures)
       monitor.trackPerformance('assignShift', Date.now() - start, false, this.currentUser);
       return { success: false, error: e.message };
     }
@@ -389,6 +401,35 @@ class ApiService {
         monitor.trackPerformance('approveSwap', Date.now() - start, false, this.currentUser);
         return { success: false, error: e.message };
       }
+  }
+
+  async getSettings(): Promise<ApiResponse<OrgSettings>> {
+    const start = Date.now();
+    try {
+        this.ensureAuthorized([Role.ADMIN]);
+        await this.simulateNetworkConditions('getSettings');
+        
+        monitor.trackPerformance('getSettings', Date.now() - start, true, this.currentUser);
+        return { success: true, data: this.settings };
+    } catch (e: any) {
+        monitor.trackPerformance('getSettings', Date.now() - start, false, this.currentUser);
+        return { success: false, error: e.message };
+    }
+  }
+
+  async updateSettings(newSettings: OrgSettings): Promise<ApiResponse<void>> {
+    const start = Date.now();
+    try {
+        this.ensureAuthorized([Role.ADMIN]);
+        await this.simulateNetworkConditions('updateSettings');
+        
+        this.settings = newSettings;
+        monitor.trackPerformance('updateSettings', Date.now() - start, true, this.currentUser);
+        return { success: true };
+    } catch (e: any) {
+        monitor.trackPerformance('updateSettings', Date.now() - start, false, this.currentUser);
+        return { success: false, error: e.message };
+    }
   }
 }
 

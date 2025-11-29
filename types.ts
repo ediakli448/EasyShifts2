@@ -114,6 +114,31 @@ export interface SwapOffer {
   offerUserName: string;
 }
 
+// --- Settings Types ---
+
+export type DayOfWeek = 'Sun' | 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri' | 'Sat';
+
+export interface ShiftTimeRange {
+  start: string;
+  end: string;
+}
+
+export interface DailyHours {
+  isOpen: boolean;
+  shifts: {
+    [ShiftLabel.MORNING]: ShiftTimeRange;
+    [ShiftLabel.EVENING]: ShiftTimeRange;
+  };
+}
+
+export interface OrgSettings {
+  weeklyHours: Record<DayOfWeek, DailyHours>;
+  defaultRequirements: {
+    [ShiftLabel.MORNING]: { [key in StaffRole]: number };
+    [ShiftLabel.EVENING]: { [key in StaffRole]: number };
+  };
+}
+
 // --- Monitoring & A/B Testing Types ---
 
 export type ExperimentGroup = 'A_STABLE' | 'B_CANARY';
