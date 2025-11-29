@@ -28,11 +28,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (role: Role) => {
     setIsLoading(true);
     try {
-      const userData = await api.getCurrentUser(role);
-      setUser(userData);
-      localStorage.setItem('shiftflex_role', role);
+      // Use the new authenticate method
+      const response = await api.authenticate(role);
+      if (response.success && response.data) {
+        setUser(response.data);
+        // CRITICAL: Set the user in the API service for subsequent requests
+        api.setCurrentUser(response.data);
+        localStorage.setItem('shiftflex_role', role);
+      } else {
+        console.error("Login failed:", response.error);
+        alert(`Login failed: ${response.error}`);
+      }
     } catch (error) {
-      console.error("Login failed", error);
+      console.error("Login error", error);
     } finally {
       setIsLoading(false);
     }
@@ -40,6 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     setUser(null);
+    api.setCurrentUser(null);
     localStorage.removeItem('shiftflex_role');
   };
 

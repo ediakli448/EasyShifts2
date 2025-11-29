@@ -12,16 +12,27 @@ export const Constraints: React.FC = () => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [scheduleStatus, setScheduleStatus] = useState<ScheduleStatus>(ScheduleStatus.DRAFT);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
-      const [myConstraints, schedule] = await Promise.all([
+      
+      const [constraintRes, scheduleRes] = await Promise.all([
         api.getConstraints(user.id),
         api.getSchedule()
       ]);
-      setConstraints(myConstraints);
-      setScheduleStatus(schedule.status);
+      
+      if (constraintRes.success && constraintRes.data) {
+          setConstraints(constraintRes.data);
+      } else {
+          setError(constraintRes.error || "Failed to fetch constraints");
+      }
+
+      if (scheduleRes.success && scheduleRes.data) {
+          setScheduleStatus(scheduleRes.data.status);
+      }
+
       setLoading(false);
     };
     fetchData();
@@ -32,15 +43,17 @@ export const Constraints: React.FC = () => {
 
     const dateStr = format(date, 'yyyy-MM-dd');
     const newConstraint: Constraint = {
-      id: Math.random().toString(),
+      id: Math.random().toString(), // temporary ID for UI
       userId: user.id,
       date: dateStr,
       type: type,
     };
 
     // Optimistic update
+    const previousConstraints = [...constraints];
     const existingIdx = constraints.findIndex(c => c.date === dateStr);
     const newConstraints = [...constraints];
+    
     if (existingIdx >= 0) {
         if (type === ConstraintType.NONE) {
             newConstraints.splice(existingIdx, 1);
@@ -51,8 +64,14 @@ export const Constraints: React.FC = () => {
         newConstraints.push(newConstraint);
     }
     setConstraints(newConstraints);
+    setError(null);
 
-    await api.upsertConstraint(newConstraint);
+    const res = await api.upsertConstraint(newConstraint);
+    if (!res.success) {
+        // Revert on failure
+        setConstraints(previousConstraints);
+        setError(res.error || "Failed to save constraint");
+    }
   };
 
   if (loading) return <div>Loading...</div>;
@@ -80,6 +99,7 @@ export const Constraints: React.FC = () => {
                     ? "Schedule is locked. You cannot modify availability." 
                     : "Submit your unavailability for the upcoming cycle."}
             </p>
+            {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
         </div>
         <div className="flex items-center gap-4">
             <Button variant="outline" size="sm" onClick={() => setCurrentMonth(m => addMonths(m, -1))}><ChevronLeft className="w-4 h-4"/></Button>

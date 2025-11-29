@@ -2,11 +2,13 @@ import React from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { Layout } from './components/Layout';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { ScheduleBuilder } from './pages/ScheduleBuilder';
 import { Constraints } from './pages/Constraints';
 import { Swaps } from './pages/Swaps';
+import { Diagnostics } from './pages/Diagnostics';
 import { Role } from './types';
 
 const ProtectedRoute = ({ children, allowedRoles }: { children?: React.ReactNode, allowedRoles?: Role[] }) => {
@@ -43,6 +45,11 @@ const AppRoutes = () => {
               <Swaps />
             </ProtectedRoute>
         } />
+        <Route path="/admin/diagnostics" element={
+            <ProtectedRoute allowedRoles={[Role.ADMIN]}>
+              <Diagnostics />
+            </ProtectedRoute>
+        } />
 
         {/* Worker Routes */}
         <Route path="/worker/constraints" element={
@@ -57,11 +64,7 @@ const AppRoutes = () => {
         } />
         <Route path="/schedule/current" element={
              <ProtectedRoute allowedRoles={[Role.WORKER, Role.ADMIN]}>
-                 {/* Reusing ScheduleBuilder in read-only mode conceptually, but typically a simpler view. 
-                     For demo, pointing to a placeholder or reuse builder with disabled controls. 
-                     Let's just redirect workers to constraints for now or reuse Swaps as a placeholder
-                 */}
-                 <div className="p-8 text-center text-slate-500">Published Schedule View (Read-Only) would go here.</div>
+                 <div className="p-8 text-center text-slate-500">Published Schedule View (Read-Only)</div>
              </ProtectedRoute>
         } />
       </Route>
@@ -73,10 +76,12 @@ const AppRoutes = () => {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <HashRouter>
-        <AppRoutes />
-      </HashRouter>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <HashRouter>
+          <AppRoutes />
+        </HashRouter>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }

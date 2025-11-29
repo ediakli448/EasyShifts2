@@ -5,15 +5,20 @@ import { addDays, format, startOfWeek } from 'date-fns';
 const today = new Date();
 const startOfCurrentWeek = startOfWeek(today, { weekStartsOn: 0 });
 
+/* 
+  NOTE: This is mock data for development/demonstration purposes only.
+  Do NOT use this data in a production environment.
+*/
+
 // Users
 export const MOCK_USERS: User[] = [
-  { id: 'u1', name: 'Dr. Alice Admin', email: 'alice@vet.com', role: Role.ADMIN, staffRole: StaffRole.VET, photoUrl: 'https://picsum.photos/id/64/200/200' },
-  { id: 'u2', name: 'Dr. Bob Smith', email: 'bob@vet.com', role: Role.WORKER, staffRole: StaffRole.VET, photoUrl: 'https://picsum.photos/id/65/200/200' },
-  { id: 'u3', name: 'Dr. Carol Jones', email: 'carol@vet.com', role: Role.WORKER, staffRole: StaffRole.VET, photoUrl: 'https://picsum.photos/id/66/200/200' },
-  { id: 'u4', name: 'Dave Assistant', email: 'dave@vet.com', role: Role.WORKER, staffRole: StaffRole.ASSISTANT, photoUrl: 'https://picsum.photos/id/67/200/200' },
-  { id: 'u5', name: 'Eve Assistant', email: 'eve@vet.com', role: Role.WORKER, staffRole: StaffRole.ASSISTANT, photoUrl: 'https://picsum.photos/id/68/200/200' },
-  { id: 'u6', name: 'Frank Assistant', email: 'frank@vet.com', role: Role.WORKER, staffRole: StaffRole.ASSISTANT, photoUrl: 'https://picsum.photos/id/69/200/200' },
-  { id: 'u7', name: 'Grace Assistant', email: 'grace@vet.com', role: Role.WORKER, staffRole: StaffRole.ASSISTANT, photoUrl: 'https://picsum.photos/id/70/200/200' },
+  { id: 'u1', name: 'Admin User', email: 'admin@example.com', role: Role.ADMIN, staffRole: StaffRole.VET, photoUrl: 'https://ui-avatars.com/api/?name=Admin+User&background=0ea5e9&color=fff' },
+  { id: 'u2', name: 'Vet User 1', email: 'vet1@example.com', role: Role.WORKER, staffRole: StaffRole.VET, photoUrl: 'https://ui-avatars.com/api/?name=Vet+One&background=random' },
+  { id: 'u3', name: 'Vet User 2', email: 'vet2@example.com', role: Role.WORKER, staffRole: StaffRole.VET, photoUrl: 'https://ui-avatars.com/api/?name=Vet+Two&background=random' },
+  { id: 'u4', name: 'Assistant 1', email: 'asst1@example.com', role: Role.WORKER, staffRole: StaffRole.ASSISTANT, photoUrl: 'https://ui-avatars.com/api/?name=Asst+One&background=random' },
+  { id: 'u5', name: 'Assistant 2', email: 'asst2@example.com', role: Role.WORKER, staffRole: StaffRole.ASSISTANT, photoUrl: 'https://ui-avatars.com/api/?name=Asst+Two&background=random' },
+  { id: 'u6', name: 'Assistant 3', email: 'asst3@example.com', role: Role.WORKER, staffRole: StaffRole.ASSISTANT, photoUrl: 'https://ui-avatars.com/api/?name=Asst+Three&background=random' },
+  { id: 'u7', name: 'Assistant 4', email: 'asst4@example.com', role: Role.WORKER, staffRole: StaffRole.ASSISTANT, photoUrl: 'https://ui-avatars.com/api/?name=Asst+Four&background=random' },
 ];
 
 // Generate Shifts for 2 weeks
@@ -55,7 +60,7 @@ const generateShifts = (): Schedule['shifts'] => {
 
 export const MOCK_SCHEDULE: Schedule = {
   id: 'sch_1',
-  title: 'October Cycle A',
+  title: 'Current Cycle',
   startDate: format(startOfCurrentWeek, 'yyyy-MM-dd'),
   endDate: format(addDays(startOfCurrentWeek, 13), 'yyyy-MM-dd'),
   status: ScheduleStatus.DRAFT,
@@ -66,7 +71,7 @@ export const MOCK_SCHEDULE: Schedule = {
 // Some initial constraints
 export const MOCK_CONSTRAINTS: Constraint[] = [
   { id: 'c1', userId: 'u2', date: format(addDays(startOfCurrentWeek, 1), 'yyyy-MM-dd'), type: ConstraintType.MORNING_ONLY },
-  { id: 'c2', userId: 'u4', date: format(addDays(startOfCurrentWeek, 2), 'yyyy-MM-dd'), type: ConstraintType.ALL_DAY, note: "Dentist appointment" },
+  { id: 'c2', userId: 'u4', date: format(addDays(startOfCurrentWeek, 2), 'yyyy-MM-dd'), type: ConstraintType.ALL_DAY, note: "Personal leave" },
 ];
 
 // Swap Requests
@@ -75,12 +80,12 @@ export const MOCK_SWAPS: SwapRequest[] = [
     id: 'sw1',
     shiftId: 's-temp-1',
     requesterId: 'u4',
-    requesterName: 'Dave Assistant',
+    requesterName: 'Assistant 1',
     shiftDate: format(addDays(today, 3), 'yyyy-MM-dd'),
     shiftLabel: ShiftLabel.MORNING,
     status: SwapStatus.ADMIN_APPROVAL,
     offers: [
-      { id: 'off1', offerUserId: 'u5', offerUserName: 'Eve Assistant' }
+      { id: 'off1', offerUserId: 'u5', offerUserName: 'Assistant 2' }
     ]
   }
 ];

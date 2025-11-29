@@ -42,13 +42,20 @@ export enum SwapStatus {
   CANCELED = 'CANCELED'
 }
 
+export interface ApiResponse<T = void> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
   photoUrl?: string;
-  role: Role; // Simplified for current org context
-  staffRole: StaffRole; // The specific job they do
+  role: Role;
+  staffRole: StaffRole;
+  abGroup?: 'A_STABLE' | 'B_CANARY'; // New field for A/B testing
 }
 
 export interface Shift {
@@ -105,4 +112,26 @@ export interface SwapOffer {
   id: string;
   offerUserId: string;
   offerUserName: string;
+}
+
+// --- Monitoring & A/B Testing Types ---
+
+export type ExperimentGroup = 'A_STABLE' | 'B_CANARY';
+
+export interface LogEntry {
+  id: string;
+  timestamp: number;
+  level: 'INFO' | 'WARN' | 'ERROR';
+  message: string;
+  userId?: string;
+  group?: ExperimentGroup;
+  metadata?: any;
+}
+
+export interface PerformanceMetric {
+  operation: string;
+  durationMs: number;
+  success: boolean;
+  group: ExperimentGroup;
+  timestamp: number;
 }

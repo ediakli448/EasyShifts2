@@ -8,11 +8,10 @@ import {
   Users, 
   CheckSquare, 
   LogOut, 
-  Bell,
   Menu,
-  RefreshCw
+  RefreshCw,
+  Activity
 } from 'lucide-react';
-import { Button } from './ui/Button';
 
 export const Layout: React.FC = () => {
   const { user, logout } = useAuth();
@@ -30,6 +29,7 @@ export const Layout: React.FC = () => {
         { to: '/admin/schedule', label: 'Schedule Builder', icon: CalendarDays },
         { to: '/admin/swaps', label: 'Swap Requests', icon: RefreshCw },
         { to: '/admin/users', label: 'Staff', icon: Users },
+        { to: '/admin/diagnostics', label: 'Diagnostics (A/B)', icon: Activity },
       ]
     : [
         { to: '/worker/constraints', label: 'My Availability', icon: CheckSquare },
@@ -57,7 +57,13 @@ export const Layout: React.FC = () => {
             <img src={user?.photoUrl} alt={user?.name} className="w-10 h-10 rounded-full mr-3" />
             <div className="overflow-hidden">
               <p className="text-sm font-medium text-slate-900 truncate">{user?.name}</p>
-              <p className="text-xs text-slate-500 truncate capitalize">{user?.role.toLowerCase()}</p>
+              <div className="flex items-center text-xs text-slate-500">
+                  <span className="capitalize">{user?.role.toLowerCase()}</span>
+                  <span className="mx-1">•</span>
+                  <span className={`${user?.abGroup === 'B_CANARY' ? 'text-amber-600' : 'text-blue-600'} font-medium`}>
+                      {user?.abGroup === 'B_CANARY' ? 'Beta' : 'Stable'}
+                  </span>
+              </div>
             </div>
           </div>
 

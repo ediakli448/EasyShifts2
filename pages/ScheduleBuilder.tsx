@@ -11,18 +11,37 @@ export const ScheduleBuilder: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
   const [isAutoAssigning, setIsAutoAssigning] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Mock week navigation
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 }));
 
+  const fetchSchedule = async () => {
+      const schedRes = await api.getSchedule();
+      if (schedRes.success && schedRes.data) {
+          setSchedule(schedRes.data);
+          // Update selected shift ref if open
+          if (selectedShift) {
+              const updated = schedRes.data.shifts.find(s => s.id === selectedShift.id);
+              if (updated) setSelectedShift(updated);
+          }
+      } else {
+          setError(schedRes.error || 'Failed to load schedule');
+      }
+  };
+
   useEffect(() => {
     const loadData = async () => {
-      const [schedData, userData] = await Promise.all([
+      const [schedRes, userRes] = await Promise.all([
         api.getSchedule(),
         api.getOrgUsers()
       ]);
-      setSchedule(schedData);
-      setUsers(userData);
+      
+      if (schedRes.success && schedRes.data) setSchedule(schedRes.data);
+      else setError(schedRes.error || null);
+
+      if (userRes.success && userRes.data) setUsers(userRes.data);
+      
       setLoading(false);
     };
     loadData();
@@ -30,9 +49,13 @@ export const ScheduleBuilder: React.FC = () => {
 
   const handleAutoAssign = async () => {
     setIsAutoAssigning(true);
-    await api.autoAssign();
-    const updated = await api.getSchedule(); // Reload
-    setSchedule(updated);
+    setError(null);
+    const res = await api.autoAssign();
+    if (res.success) {
+        await fetchSchedule();
+    } else {
+        setError(res.error || 'Auto-assign failed');
+    }
     setIsAutoAssigning(false);
   };
 
@@ -44,28 +67,49 @@ export const ScheduleBuilder: React.FC = () => {
         ? ScheduleStatus.PUBLISHED 
         : ScheduleStatus.DRAFT;
     
-    await api.updateScheduleStatus(newStatus);
-    setSchedule({ ...schedule, status: newStatus });
+    const res = await api.updateScheduleStatus(newStatus);
+    if (res.success) {
+        setSchedule({ ...schedule, status: newStatus });
+    } else {
+        setError(res.error || 'Failed to update status');
+    }
   };
 
   const handleAssign = async (userId: string, role: StaffRole) => {
     if (!selectedShift) return;
-    await api.assignShift(selectedShift.id, userId, role);
-    // Optimistic update or reload
-    const updated = await api.getSchedule();
-    setSchedule(updated);
-    setSelectedShift(updated.shifts.find(s => s.id === selectedShift.id) || null);
+    setError(null);
+    
+    // First attempt (normal)
+    let res = await api.assignShift(selectedShift.id, userId, role, false);
+
+    // If capacity error, ask for force override
+    if (!res.success && res.error && res.error.includes("Shift is full")) {
+        const confirmForce = window.confirm(`${res.error}.\n\nDo you want to force assign this worker anyway?`);
+        if (confirmForce) {
+            res = await api.assignShift(selectedShift.id, userId, role, true);
+        }
+    }
+
+    if (res.success) {
+        await fetchSchedule();
+    } else {
+        setError(res.error || 'Assignment failed');
+    }
   };
 
   const handleRemove = async (userId: string) => {
     if (!selectedShift) return;
-    await api.removeAssignment(selectedShift.id, userId);
-    const updated = await api.getSchedule();
-    setSchedule(updated);
-    setSelectedShift(updated.shifts.find(s => s.id === selectedShift.id) || null);
+    setError(null);
+    const res = await api.removeAssignment(selectedShift.id, userId);
+    if (res.success) {
+        await fetchSchedule();
+    } else {
+        setError(res.error || 'Removal failed');
+    }
   };
 
-  if (loading || !schedule) return <div className="flex justify-center p-12"><div className="animate-spin h-8 w-8 border-4 border-primary-600 rounded-full border-t-transparent"></div></div>;
+  if (loading) return <div className="flex justify-center p-12"><div className="animate-spin h-8 w-8 border-4 border-primary-600 rounded-full border-t-transparent"></div></div>;
+  if (!schedule) return <div className="p-8 text-red-500">Error loading schedule: {error}</div>;
 
   const weekShifts = schedule.shifts.filter(s => {
       const d = parseISO(s.date);
@@ -144,6 +188,13 @@ export const ScheduleBuilder: React.FC = () => {
             </Button>
         </div>
       </div>
+
+      {error && (
+          <div className="bg-red-50 text-red-700 p-3 rounded-md mb-4 text-sm flex items-center">
+              <AlertTriangle className="w-4 h-4 mr-2" />
+              {error}
+          </div>
+      )}
 
       <div className="flex flex-1 gap-6 overflow-hidden">
         {/* Calendar Grid */}

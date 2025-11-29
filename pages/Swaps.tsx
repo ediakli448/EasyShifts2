@@ -3,23 +3,33 @@ import { api } from '../services/api';
 import { SwapRequest, SwapStatus, Role } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
-import { RefreshCw, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 
 export const Swaps: React.FC = () => {
   const { user } = useAuth();
   const [swaps, setSwaps] = useState<SwapRequest[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadSwaps = async () => {
-      const data = await api.getSwaps();
-      setSwaps(data);
+      const res = await api.getSwaps();
+      if (res.success && res.data) {
+          setSwaps(res.data);
+      } else {
+          setError(res.error || 'Failed to load swaps');
+      }
     };
     loadSwaps();
   }, []);
 
   const handleApprove = async (id: string) => {
-    await api.approveSwap(id);
-    setSwaps(prev => prev.map(s => s.id === id ? { ...s, status: SwapStatus.APPROVED } : s));
+    setError(null);
+    const res = await api.approveSwap(id);
+    if (res.success) {
+        setSwaps(prev => prev.map(s => s.id === id ? { ...s, status: SwapStatus.APPROVED } : s));
+    } else {
+        setError(res.error || 'Failed to approve swap');
+    }
   };
 
   const StatusBadge = ({ status }: { status: SwapStatus }) => {
@@ -48,6 +58,13 @@ export const Swaps: React.FC = () => {
             </Button>
         )}
       </div>
+      
+      {error && (
+          <div className="bg-red-50 text-red-700 p-4 rounded-lg mb-4 flex items-center">
+              <AlertTriangle className="w-5 h-5 mr-2"/>
+              {error}
+          </div>
+      )}
 
       <div className="space-y-4">
         {swaps.map(swap => (
